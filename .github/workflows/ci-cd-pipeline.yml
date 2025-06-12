@@ -1,0 +1,38 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Jab 'main' branch par code push hoga, tab pipeline chalega
+  pull_request:
+    branches:
+      - main  # Jab pull request banega, tab bhi pipeline chalega
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Ubuntu machine par pipeline chalega
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Repository ka code checkout karna
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'  # Node.js ka version set karna (aapke project ke hisaab se)
+
+      - name: Install dependencies
+        run: npm install  # Project ki dependencies install karna
+
+      - name: Run tests
+        run: npm test  # Unit tests run karna
+
+      - name: Build project
+        run: npm run build  # Project ko build karna (agar necessary ho)
+
+      - name: Deploy to production
+        if: github.ref == 'refs/heads/main'  # Sirf 'main' branch par deploy hoga
+        run: |
+          echo "Deploying to production..."
+          # Yahan apne deployment commands daal sakte hain, jaise SSH se server par deploy karna
+          # Example: ssh user@server 'cd /path/to/project && git pull && npm install && pm2 restart app'
