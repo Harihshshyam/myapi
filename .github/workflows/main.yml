@@ -1,0 +1,68 @@
+name: Build and Deploy to Azure WebApp
+
+# Trigger the workflow when code is pushed to the main branch or manually triggered
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+
+env:
+  AZURE_WEBAPP_NAME: your-webapp-name  # Replace with your Azure WebApp name
+  AZURE_WEBAPP_PACKAGE_PATH: '.'      # Path to your project directory (default is the root)
+  NODE_VERSION: '20.x'                # Set Node.js version you want to use
+
+permissions:
+  contents: read  # This gives permission to read the contents of the repository
+
+jobs:
+  # Build job for installing dependencies and testing
+  build:
+    runs-on: ubuntu-latest  # Runs the job on the latest version of Ubuntu
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # Checks out the latest code from the repository
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4  # Sets up Node.js environment
+        with:
+          node-version: ${{v18.20.8}}  
+          cache: 'npm'  # Enables npm cache for faster builds
+
+      - name: Install dependencies, build, and test
+        run: |
+          npm install  # Install project dependencies
+          npm run build --if-present  # Run build if a build script is defined in package.json
+          npm run test --if-present  # Run tests if a test script is defined in package.json
+
+      - name: Upload artifact for deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: .  # Upload the entire project directory for deployment
+
+  # Deployment job to Azure WebApp
+  deploy:
+    runs-on: ubuntu-latest  # Runs the deployment job on the latest version of Ubuntu
+    needs: build  # Ensures that the deployment only runs after a successful build
+    environment:
+      name: 'Development'  # Set your environment name (could be 'Production', etc.)
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}  # Get the URL of the deployed app
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app  # Name of the artifact to download
+
+      - name: Deploy to Azure WebApp
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}  # Azure WebApp name
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}  # Set the Azure publish profile in GitHub Secrets
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}  # Path to your application package (default is the root)
+
+      - name: Check if deployment was successful
+        run: |
+          echo "Deployment URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
