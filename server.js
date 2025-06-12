@@ -1,0 +1,42 @@
+// Express ko import karna
+const express = require('express');
+
+// App ko initialize karna
+const app = express();
+
+// Port number
+const PORT = process.env.PORT || 5000;
+
+// Middleware to parse JSON data
+app.use(express.json());
+
+// Home route
+app.get('/', (req, res) => {
+  res.send('Hello, welcome to the API!');
+});
+
+// Sample GET route
+app.get('/api/products', (req, res) => {
+  const products = [
+    { id: 1, name: 'Laptop', price: 1000 },
+    { id: 2, name: 'Phone', price: 500 },
+    { id: 3, name: 'Watch', price: 200 }
+  ];
+  res.json(products);
+});
+
+// Sample POST route
+app.post('/api/products', (req, res) => {
+  const newProduct = req.body;
+  newProduct.id = Math.floor(Math.random() * 1000);
+  res.status(201).json({
+    message: 'Product created successfully!',
+    product: newProduct
+  });
+});
+
+// Server start karna
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
